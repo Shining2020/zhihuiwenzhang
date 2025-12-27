@@ -1,0 +1,17 @@
+
+> my-v0-project@0.1.0 dev
+> next dev
+
+   ▲ Next.js 16.0.3 (Turbopack)
+   - Local:         http://localhost:3000
+   - Network:       http://192.168.0.120:3000
+   - Environments: .env.local
+
+ ✓ Starting...
+[baseline-browser-mapping] The data in this module is over two months old.  To ensure accurate Baseline data, please update: `npm i baseline-browser-mapping@latest -D`
+ ⚠ Minimum recommended TypeScript version is v5.1.0, older versions can potentially be incompatible with Next.js. Detected: 5.0.2
+ ✓ Ready in 425ms
+ POST /api/search 200 in 1898ms (compile: 229ms, render: 1669ms)
+ GET / 200 in 2.6s (compile: 2.5s, render: 81ms)
+ POST /api/generate 200 in 8.1s (compile: 68ms, render: 8.0s)
+ GET /result 200 in 366ms (compile: 321ms, render: 45ms)
