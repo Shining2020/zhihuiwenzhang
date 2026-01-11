@@ -205,9 +205,9 @@ export default function ResultPage() {
     return (
       <div className="min-h-screen bg-background">
         <Header />
-        <main className="max-w-4xl mx-auto px-4 py-12 text-center">
-          <p className="text-muted-foreground mb-4">还没有生成的文章</p>
-          <Button onClick={() => (window.location.href = "/")}>
+        <main className="max-w-4xl mx-auto px-4 sm:px-6 py-6 sm:py-8 md:py-12 text-center">
+          <p className="text-sm sm:text-base text-muted-foreground mb-4">还没有生成的文章</p>
+          <Button onClick={() => (window.location.href = "/")} className="w-full sm:w-auto">
             <Home className="mr-2 h-4 w-4" />
             返回首页
           </Button>
@@ -220,26 +220,26 @@ export default function ResultPage() {
     <div className="min-h-screen bg-background">
       <Header />
 
-      <main className="max-w-4xl mx-auto px-4 py-12">
+      <main className="max-w-4xl mx-auto px-4 sm:px-6 py-6 sm:py-8 md:py-12">
         {/* Meta Info */}
-        <div className="mb-8 space-y-2">
-          <h1 className="text-3xl font-bold text-primary text-balance">{metadata.title || metadata.question || "未命名文章"}</h1>
+        <div className="mb-6 sm:mb-8 space-y-2">
+          <h1 className="text-2xl sm:text-3xl font-bold text-primary text-balance break-words">{metadata.title || metadata.question || "未命名文章"}</h1>
           {(metadata.models && metadata.models.length > 0) || (metadata.products && metadata.products.length > 0) ? (
             <div className="flex flex-wrap gap-2">
               {(metadata.models || metadata.products?.map((p) => p.name || "").filter(Boolean) || []).map((name, idx) => (
-                <span key={idx} className="text-sm bg-accent/20 text-accent-foreground px-3 py-1 rounded-full">
+                <span key={idx} className="text-xs sm:text-sm bg-accent/20 text-accent-foreground px-2 sm:px-3 py-1 rounded-full break-words">
                   {name}
                 </span>
               ))}
             </div>
           ) : null}
-          <p className="text-sm text-muted-foreground">
+          <p className="text-xs sm:text-sm text-muted-foreground">
             生成于 {new Date(metadata.generatedAt).toLocaleString("zh-CN")}
           </p>
         </div>
 
         {/* Action Bar */}
-        <div className="flex flex-wrap gap-2 mb-6">
+        <div className="flex flex-wrap gap-2 mb-4 sm:mb-6">
           <Button onClick={handleCopy} variant="outline" size="sm">
             <Copy className="mr-2 h-4 w-4" />
             {isCopied ? "已复制" : "复制全文"}
@@ -278,14 +278,14 @@ export default function ResultPage() {
 
         {/* Article Display / Edit */}
         {isEditing ? (
-          <Card className="p-6">
+          <Card className="p-4 sm:p-6">
             <Textarea
               value={editedContent}
               onChange={(e) => setEditedContent(e.target.value)}
-              className="min-h-96 font-mono text-sm"
+              className="min-h-96 font-mono text-xs sm:text-sm"
             />
-            <div className="mt-4 flex gap-2">
-              <Button onClick={() => setIsEditing(false)} size="sm">
+            <div className="mt-4 flex flex-col sm:flex-row gap-2">
+              <Button onClick={() => setIsEditing(false)} size="sm" className="w-full sm:w-auto">
                 保存更改
               </Button>
               <Button
@@ -295,27 +295,28 @@ export default function ResultPage() {
                 }}
                 variant="outline"
                 size="sm"
+                className="w-full sm:w-auto"
               >
                 取消编辑
               </Button>
             </div>
           </Card>
         ) : (
-          <Card className="p-8 prose prose-sm dark:prose-invert max-w-none">
-            <div className="text-foreground leading-relaxed whitespace-pre-wrap space-y-4">
+          <Card className="p-4 sm:p-6 md:p-8 prose prose-sm dark:prose-invert max-w-none">
+            <div className="text-foreground leading-relaxed whitespace-pre-wrap space-y-4 text-sm sm:text-base break-words">
               <ReactMarkdown>{article}</ReactMarkdown>
             </div>
           </Card>
         )}
 
         {metadata.products && metadata.products.length > 0 && (
-          <div className="mt-12 border-t pt-8">
-            <h2 className="text-lg font-semibold text-foreground mb-4">使用的商品信息</h2>
-            <div className="grid gap-4">
+          <div className="mt-6 sm:mt-8 md:mt-12 border-t pt-6 sm:pt-8">
+            <h2 className="text-base sm:text-lg font-semibold text-foreground mb-3 sm:mb-4">使用的商品信息</h2>
+            <div className="grid gap-3 sm:gap-4">
               {metadata.products.map((product, idx) => (
-                <Card key={idx} className="p-6 bg-card/50">
-                  <h3 className="font-semibold text-foreground mb-3">{product.name || `商品 ${idx + 1}`}</h3>
-                  <div className="space-y-2 text-sm">
+                <Card key={idx} className="p-4 sm:p-6 bg-card/50">
+                  <h3 className="text-sm sm:text-base font-semibold text-foreground mb-2 sm:mb-3 break-words">{product.name || `商品 ${idx + 1}`}</h3>
+                  <div className="space-y-2 text-xs sm:text-sm">
                     {product.features && (
                       <p>
                         <span className="text-muted-foreground">特点：</span>
@@ -341,13 +342,13 @@ export default function ResultPage() {
                       </p>
                     )}
                     {product.url && (
-                      <p>
+                      <p className="break-all">
                         <span className="text-muted-foreground">链接：</span>
                         <a
                           href={product.url}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="text-accent hover:underline"
+                          className="text-accent hover:underline break-all"
                         >
                           {product.url}
                         </a>
@@ -361,17 +362,17 @@ export default function ResultPage() {
         )}
 
         {/* Additional Info */}
-        <div className="mt-12 border-t pt-8">
-          <h2 className="text-lg font-semibold text-foreground mb-4">生成信息</h2>
-          <div className="grid md:grid-cols-1 gap-6 text-sm">
+        <div className="mt-6 sm:mt-8 md:mt-12 border-t pt-6 sm:pt-8">
+          <h2 className="text-base sm:text-lg font-semibold text-foreground mb-3 sm:mb-4">生成信息</h2>
+          <div className="grid md:grid-cols-1 gap-4 sm:gap-6 text-xs sm:text-sm">
             <div>
               <p className="text-muted-foreground mb-2">原始问题</p>
-              <p className="text-foreground">{metadata.title || metadata.question || "未设置"}</p>
+              <p className="text-foreground break-words">{metadata.title || metadata.question || "未设置"}</p>
             </div>
             {metadata.models && metadata.models.length > 0 && (
               <div>
                 <p className="text-muted-foreground mb-2">商品型号</p>
-                <p className="text-foreground">{metadata.models.join("、")}</p>
+                <p className="text-foreground break-words">{metadata.models.join("、")}</p>
               </div>
             )}
           </div>

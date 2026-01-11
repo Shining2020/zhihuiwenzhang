@@ -36,13 +36,15 @@ export async function POST(request: Request) {
   } catch (error) {
     console.error("[search] error:", error)
     const message = error instanceof Error ? error.message : "搜索失败"
-    return NextResponse.json({ error: message }, { status: 500 })
+    // 如果是 API key 错误，返回 401；其他错误返回 500
+    const status = message.includes("invalid_access_key") || message.includes("API Access Key") ? 401 : 500
+    return NextResponse.json({ error: message }, { status })
   }
 }
 
 async function querySerpstack(model: string): Promise<SearchResultItem[] | null> {
   try {
-    const url = `http://api.serpstack.com/search?access_key=${SERPSTACK_API_KEY}&query=${encodeURIComponent(
+    const url = `https://api.serpstack.com/search?access_key=${SERPSTACK_API_KEY}&query=${encodeURIComponent(
       model,
     )}&num=10`
 
@@ -50,15 +52,16 @@ async function querySerpstack(model: string): Promise<SearchResultItem[] | null>
     
     if (!res.ok) {
       const text = await res.text()
-      console.warn("[search] serpstack response not ok:", res.status, text.substring(0, 200))
-      return null
+      console.error("[search] serpstack HTTP error:", res.status, text.substring(0, 200))
+      throw new Error(`Serpstack API HTTP ${res.status}: ${text.substring(0, 100)}`)
     }
 
     const data = await res.json()
 
     if (data.error) {
-      console.warn("[search] serpstack error:", data.error)
-      return null
+      const errorMsg = data.error.info || data.error.type || JSON.stringify(data.error)
+      console.error("[search] serpstack API error:", errorMsg)
+      throw new Error(`Serpstack API 错误: ${errorMsg}`)
     }
 
     const organic = (data.organic_results || []) as Array<{
