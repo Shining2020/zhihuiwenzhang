@@ -89,6 +89,7 @@ export async function POST(request: Request) {
       searchDigest,
       hasModels,
       writingStyle: stylePreference,
+      contentType: contentType,
     })
 
     const contentPrompt = selectContentPrompt(contentType)
@@ -187,12 +188,14 @@ function buildPrompt({
   searchDigest,
   hasModels,
   writingStyle,
+  contentType,
 }: {
   title: string
   models: string[]
   searchDigest: string
   hasModels: boolean
   writingStyle?: "rational" | "experience" | "random"
+  contentType?: "appliance" | "beauty" | "gift" | "discussion"
 }): string {
   const styleHint =
     writingStyle === "rational"
@@ -221,9 +224,20 @@ function buildPrompt({
 - 商品之间不要形成明显的“清单感”或“评测感”
 
 干货表达方式（重要）：
-- 少写“配置说明”，多写“使用判断逻辑”
-- 技术点只能用于解释“为什么适合 / 不适合”
+- 少写"配置说明"，多写"使用判断逻辑"
+- 技术点只能用于解释"为什么适合 / 不适合"
 - 不写参数表、价格、榜单、推荐语
+${contentType === "beauty" ? `
+关于香水类商品的香调描述（非常重要）：
+- 如果涉及香水，必须详细描述香调：前调、中调、后调
+- 用大白话、有吸引力的文字描述香味，让读者能"闻到"那种感觉
+- 不要只列香调名称（如"柑橘、茉莉、麝香"），要描述实际闻起来的感觉
+- 前调：描述刚喷出来那一刻的感觉（比如"像刚剥开的橙子，清新但不刺鼻"）
+- 中调：描述味道稳定后的感觉（比如"慢慢变成温温柔柔的花香，像雨后花园"）
+- 后调：描述最后留下的余香（比如"最后是淡淡的木质调，闻起来很安心，像冬天晒太阳的感觉"）
+- 可以用生活场景比喻（"像小时候奶奶家的味道""像刚洗完的白衬衫"）
+- 可以描述在不同场合的感受（"夏天用很清爽，但冬天感觉有点单薄"）
+- 让香调描述成为回答的亮点，用具体、生动的语言让读者产生共鸣` : ""}
 
 语言与风格：
 - 第一人称
