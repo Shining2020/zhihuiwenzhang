@@ -128,5 +128,34 @@
   }
   body {
     @apply bg-background text-foreground;
+    /* iOS Safari 修复 */
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    -webkit-tap-highlight-color: transparent;
+    -webkit-text-size-adjust: 100%;
+    text-size-adjust: 100%;
+  }
+  
+  /* 支持 iOS 安全区域 - 应用到根容器 */
+  html {
+    padding-top: env(safe-area-inset-top);
+    padding-bottom: env(safe-area-inset-bottom);
+    padding-left: env(safe-area-inset-left);
+    padding-right: env(safe-area-inset-right);
+  }
+  
+  /* iOS Safari 输入框修复 */
+  input,
+  textarea,
+  select {
+    -webkit-appearance: none;
+    appearance: none;
+    border-radius: inherit;
+  }
+  
+  /* iOS Safari 滚动修复 */
+  html {
+    -webkit-overflow-scrolling: touch;
+    scroll-behavior: smooth;
   }
 }

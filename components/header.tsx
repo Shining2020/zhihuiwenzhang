@@ -1,6 +1,6 @@
 export default function Header() {
   return (
-    <header className="border-b border-border bg-card">
+    <header className="border-b border-border bg-card sticky top-0 z-50">
       <div className="max-w-4xl mx-auto px-4 sm:px-6 py-3 sm:py-4 flex items-center justify-between">
         <div className="flex items-center gap-2 sm:gap-3">
           <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-lg bg-accent flex items-center justify-center shrink-0">
