@@ -27,7 +27,7 @@ interface ModelEntry {
   error?: string
 }
 
-const MAX_MODELS = 3
+const MAX_MODELS = 8
 
 const getHostFromLink = (link: string) => {
   try {
@@ -320,7 +320,7 @@ export default function Home() {
 
             <div className="border-t pt-8">
               <div className="flex items-center justify-between mb-6">
-                <h2 className="text-xl font-semibold text-foreground">商品型号（最多 3 个）</h2>
+                <h2 className="text-xl font-semibold text-foreground">商品型号（最多 8 个）</h2>
                 <Button type="button" variant="outline" size="sm" onClick={addModel} className="gap-2 bg-transparent">
                   <Plus className="h-4 w-4" />
                   新增型号
