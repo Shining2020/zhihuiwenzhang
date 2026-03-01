@@ -4,10 +4,10 @@
   "framework": "nextjs",
   "functions": {
     "app/api/**/*.ts": {
-      "maxDuration": 30
+      "maxDuration": 180
     }
   },
-  "regions": ["sin1"]
+  "regions": [
+    "sin1"
+  ]
 }
-
-
