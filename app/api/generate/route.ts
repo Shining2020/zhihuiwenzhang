@@ -15,6 +15,7 @@ interface GenerateRequest {
   manualPrompt?: string
   contentType?: "appliance" | "beauty" | "gift" | "discussion"
   stylePreference?: "rational" | "experience" | "random"
+  giftTarget?: string
 }
 
 /* ------------------ 工具函数（必须在顶部定义） ------------------ */
@@ -67,7 +68,8 @@ export async function POST(request: Request) {
   try {
     const body: GenerateRequest = await request.json()
     const title = body.title?.trim()
-    const models = (body.models || []).map((m) => m.trim()).filter(Boolean).slice(0, 3)
+    // 移除 slice(0, 3) 限制，支持最多8个商品
+    const models = (body.models || []).map((m) => m.trim()).filter(Boolean).slice(0, 8)
     const contentType = body.contentType || "discussion"
     const stylePreference = body.stylePreference || "random"
 
@@ -90,11 +92,20 @@ export async function POST(request: Request) {
       hasModels,
       writingStyle: stylePreference,
       contentType: contentType,
+      giftTarget: body.giftTarget,
     })
 
     const contentPrompt = selectContentPrompt(contentType)
     const styleHint = selectStyleHint(stylePreference)
     const systemPrompt = [zhihuPersona, contentPrompt, styleHint].filter(Boolean).join("\n\n")
+
+    // 根据商品数量动态调整 max_tokens
+    // 基础：2000 tokens（无商品时）
+    // 每个商品增加：800 tokens
+    // 最大不超过：8000 tokens
+    const baseTokens = 2000
+    const tokensPerModel = 800
+    const maxTokens = Math.min(baseTokens + models.length * tokensPerModel, 8000)
 
     const aiApiUrl =
       process.env.AI_API_URL || "https://api.openai.com/v1/chat/completions"
@@ -122,7 +133,7 @@ export async function POST(request: Request) {
             { role: "user", content: userPrompt },
           ],
           temperature: 0.85,
-          max_tokens: 4000,
+          max_tokens: maxTokens,
         }),
         signal: controller.signal,
       })
@@ -189,6 +200,7 @@ function buildPrompt({
   hasModels,
   writingStyle,
   contentType,
+  giftTarget,
 }: {
   title: string
   models: string[]
@@ -196,6 +208,7 @@ function buildPrompt({
   hasModels: boolean
   writingStyle?: "rational" | "experience" | "random"
   contentType?: "appliance" | "beauty" | "gift" | "discussion"
+  giftTarget?: string
 }): string {
   const styleHint =
     writingStyle === "rational"
@@ -207,12 +220,243 @@ function buildPrompt({
   if (hasModels) {
     // 有商品链接/型号的版本：商品作为例子融入回答
     const modelsText = models.join("、")
+    
+    // 如果是送礼类型，使用特殊的 prompt 结构
+    if (contentType === "gift") {
+      const giftTargetValue = giftTarget || "朋友"
+      
+      // 根据商品数量动态调整字数要求
+      const modelCount = models.length
+      let perModelWords = ""
+      let totalWords = ""
+      
+      if (modelCount === 3) {
+        perModelWords = "每个约350–500字"
+        totalWords = "1800–2200字"
+      } else if (modelCount === 4) {
+        perModelWords = "每个约300–350字"
+        totalWords = "2000–2400字"
+      } else if (modelCount === 5) {
+        perModelWords = "每个约220–280字"
+        totalWords = "2200–2600字"
+      } else if (modelCount >= 6) {
+        perModelWords = "每个约180–230字"
+        totalWords = "2400–2800字"
+      } else {
+        // 默认情况（1-2个商品）
+        perModelWords = "每个约350–500字"
+        totalWords = "1200–2000字"
+      }
+      
+      return `你正在回答一个关于"送礼"的真实问题。
+
+平台主要发布：知乎，同时可能同步百家号。
+
+文章目标：
+写一篇像真人分享经验的送礼回答，同时自然介绍商品，让读者觉得内容真实、有帮助，而不是广告。
+
+本次问题：${title}
+本次送礼对象：${giftTargetValue}
+本次可用商品：${modelsText}（共${modelCount}个商品）
+
+------------------------------------------------
+
+一、写作风格
+
+必须符合知乎真实用户表达习惯：
+
+- 像普通人分享经验，而不是营销文
+- 语气自然，可以有一点犹豫或思考
+- 允许穿插个人经历或观察
+- 可以出现生活化表达
+- 段落长短自然变化
+
+禁止出现：
+
+推荐一  
+重点推荐  
+产品介绍  
+总结  
+
+不要写成营销软文结构。
+
+------------------------------------------------
+
+二、文章整体结构
+
+文章建议结构：
+
+1 开头：聊送礼为什么难选（结合送礼对象）
+2 分享送礼思路或经验
+3 自然过渡到具体礼物
+4 逐个介绍商品
+5 结尾用开放式问题收尾，引导讨论
+
+整篇文章必须像一个人在认真回答问题，而不是商品清单。
+
+------------------------------------------------
+
+三、送礼对象
+
+送礼对象可能包括：
+
+男朋友  
+女朋友  
+同事  
+领导  
+朋友  
+老丈人  
+岳母  
+爸爸  
+妈妈
+亲戚  
+老婆  
+商业合作伙伴  
+
+写作时必须结合送礼对象的特点，例如：
+
+- 长辈更看重实用和体面
+- 同事更看重分寸
+- 伴侣更看重心意
+- 商业伙伴更看重礼数
+
+本次送礼对象是：${giftTargetValue}
+
+------------------------------------------------
+
+四、商品数量规则（非常重要）
+
+本次共有 ${modelCount} 个商品。
+
+根据商品数量，每个商品介绍：${perModelWords}
+
+整篇文章字数大约：${totalWords}
+
+------------------------------------------------
+
+五、商品介绍必须包含的内容
+
+每个商品介绍必须包含：
+
+1 商品是什么（品牌 + 类别 + 产品定位）
+
+2 核心特点或技术  
+例如：
+家电 → 功能、容量、技术特点  
+食品 → 口感、产地、制作方式  
+酒类 → 香型、口感、饮用场景  
+滋补品 → 功效、食用方式  
+
+3 生活使用场景  
+例如家庭聚会、日常生活、节日氛围等
+
+4 为什么适合当前送礼对象
+
+------------------------------------------------
+
+六、商品名称规则
+
+第一次出现：
+
+使用完整名称，例如：
+
+美的 KZC6054 空气炸锅  
+美的 M1-L213B 微波炉  
+人头马 CLUB 干邑
+
+后续出现必须使用自然简称，例如：
+
+空气炸锅  
+这台微波炉  
+这瓶人头马  
+
+不要反复出现完整型号。
+
+------------------------------------------------
+
+七、商品权重规则
+
+不要每个商品写成一样结构。
+
+允许：
+
+1–2个商品介绍更详细  
+其他商品稍微简略  
+
+不要每个商品长度完全一样。
+
+------------------------------------------------
+
+八、避免劝退比例过高
+
+可以适度提到某些商品不适合的人群，
+
+但整篇文章中：
+
+最多只对1–2个商品提到不适合人群。
+
+整体语气必须是：
+
+"推荐 + 经验分享"
+
+而不是：
+
+"不断劝退"。
+
+------------------------------------------------
+
+九、商品介绍比例
+
+整篇文章内容比例建议：
+
+送礼经验与思路  
+约40%
+
+商品介绍  
+约60%
+
+商品介绍不能只有一句话，必须包含功能或特点。
+
+------------------------------------------------
+
+十、结尾方式
+
+不要写总结。
+
+结尾必须用：
+
+开放式提问
+
+例如：
+
+你们过年一般给亲戚送什么？  
+有没有那种送出去以后特别受欢迎的礼物？
+
+------------------------------------------------
+
+十一、最终目标
+
+让读者看完感觉：
+
+这是一个真人在认真分享送礼经验  
+顺便介绍了一些礼物  
+而不是在写广告。
+
+------------------------------------------------
+
+下面是一些背景信息，仅用于你理解商品差异，不要逐字照抄：
+
+${searchDigest}
+
+现在根据以上规则回答问题，并自然结合商品进行推荐。`
+    }
+    
     return `你正在知乎回答下面这个问题：
 
 「${title}」
 
 核心写作规则（非常重要）：
-1. 必须从“直接回应提问者的核心困惑”开始，而不是商品或个人经历。
+1. 必须从"直接回应提问者的核心困惑"开始，而不是商品或个人经历。
 2. 回答的重点是：如何判断 / 如何选择 / 如何避免踩坑，而不是推荐具体产品。
 3. 商品只是用来说明观点的例子，不是主角。
 
@@ -221,7 +465,7 @@ function buildPrompt({
 - 不要求每个商品都写同样多，商品段落不要结构完全一致，可以有的写详细，有的只轻描淡写，允许插入个人跑题或临时感受，避免清单感。
 - 允许有的商品只是一笔带过
 - 每个被提到的商品，必须同时出现「适合谁」和「不适合谁」
-- 商品之间不要形成明显的“清单感”或“评测感”
+- 商品之间不要形成明显的"清单感"或"评测感"
 
 干货表达方式（重要）：
 - 少写"配置说明"，多写"使用判断逻辑"

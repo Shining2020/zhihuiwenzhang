@@ -48,6 +48,7 @@ export default function Home() {
   const [stylePreference, setStylePreference] = useState<"rational" | "experience" | "random">(
     "random"
   )
+  const [giftTarget, setGiftTarget] = useState("朋友")
   const [models, setModels] = useState<ModelEntry[]>([
     { id: `${baseId}-0`, name: "", results: [], isLoading: false },
   ])
@@ -137,6 +138,7 @@ export default function Home() {
   const handleReset = () => {
     setTitle("")
     setManualPrompt("")
+    setGiftTarget("朋友")
     setModels([{ id: `${baseId}-0`, name: "", results: [], isLoading: false }])
     setError("")
   }
@@ -173,6 +175,7 @@ export default function Home() {
       manualPrompt: manualPrompt.trim() || undefined,
       contentType,
       stylePreference,
+      ...(contentType === "gift" && { giftTarget }),
     }
 
     setError("")
@@ -317,6 +320,35 @@ export default function Home() {
                 <p className="text-sm text-muted-foreground">可选：影响文风侧重点（理性/体验/随机）。</p>
               </div>
             </div>
+
+            {contentType === "gift" && (
+              <div className="space-y-2">
+                <Label htmlFor="giftTarget" className="text-base font-semibold">
+                  送礼对象
+                </Label>
+                <select
+                  id="giftTarget"
+                  value={giftTarget}
+                  onChange={(e) => setGiftTarget(e.target.value)}
+                  className="w-full rounded-md border px-3 py-2 text-base"
+                >
+                  <option value="男朋友">男朋友</option>
+                  <option value="女朋友">女朋友</option>
+                  <option value="老婆">老婆</option>
+                  <option value="朋友">朋友</option>
+                  <option value="同事">同事</option>
+                  <option value="领导">领导</option>
+                  <option value="老丈人">老丈人</option>
+                  <option value="岳母">岳母</option>
+                  <option value="亲戚">亲戚</option>
+                  <option value="爸爸">爸爸</option>
+                  <option value="妈妈">妈妈</option>
+                  <option value="兄弟姐妹">兄弟姐妹</option>
+                  <option value="商业合作伙伴">商业合作伙伴</option>
+                </select>
+                <p className="text-sm text-muted-foreground">选择送礼对象，AI会根据对象调整推荐逻辑。</p>
+              </div>
+            )}
 
             <div className="border-t pt-8">
               <div className="flex items-center justify-between mb-6">
