@@ -41,6 +41,23 @@ const structureRules = safeRead(path.join(promptsDir, "structureRules.md"))
 const structureFrameworks = parseStructureFrameworks(structureRules)
 
 /**
+ * 模板渲染函数：将 {{variable}} 替换为实际值
+ */
+function renderPromptTemplate(template: string, vars: Record<string, any>) {
+  if (!template) return ""
+  return template.replace(/\{\{\s*([a-zA-Z0-9_]+)\s*\}\}/g, (_, key) => {
+    const v = vars[key]
+    if (v === undefined || v === null) return ""
+    if (typeof v === "string") return v
+    try {
+      return JSON.stringify(v, null, 2)
+    } catch {
+      return String(v)
+    }
+  })
+}
+
+/**
  * 知乎普通用户人设（system）
  * 只定义“身份 & 写作态度”，不定义具体问题内容
  */
@@ -84,6 +101,11 @@ export async function POST(request: Request) {
     }
 
     const searchDigest = hasModels ? formatSearchData(models, body.searchData || {}) : ""
+
+    // Debug: 检查 gift.md 是否加载成功
+    if (contentType === "gift") {
+      console.log("[PROMPT] using gift.md:", Boolean(giftPrompt && giftPrompt.trim()), "len=", giftPrompt?.length || 0)
+    }
 
     const userPrompt = buildPrompt({
       title,
@@ -225,7 +247,20 @@ function buildPrompt({
     if (contentType === "gift") {
       const giftTargetValue = giftTarget || "朋友"
       
-      // 根据商品数量动态调整字数要求
+      // 1) 组装商品文本
+      const productsText = models
+        .map((modelName, idx) => {
+          // 从 searchDigest 中提取该商品的信息
+          const modelInfo = searchDigest
+            .split("\n\n")
+            .find((section) => section.startsWith(modelName))
+          const info = modelInfo ? modelInfo.replace(new RegExp(`^${modelName}：?\\s*`), "").trim() : ""
+          return `【商品${idx + 1}】${modelName}\n${info}`.trim()
+        })
+        .filter(Boolean)
+        .join("\n\n")
+      
+      // 2) 根据商品数量动态调整字数要求
       const modelCount = models.length
       let perModelWords = ""
       let totalWords = ""
@@ -248,6 +283,27 @@ function buildPrompt({
         totalWords = "1200–2000字"
       }
       
+      // 3) 把 gift.md 当模板渲染
+      const rendered = renderPromptTemplate(giftPrompt, {
+        giftTarget: giftTargetValue,
+        question: title,
+        userTitle: title,
+        productsText: productsText || modelsText,
+        modelsText: modelsText,
+        modelCount: String(modelCount),
+        perModelWords,
+        totalWords,
+        searchDigest,
+        tone: writingStyle === "rational" ? "理性" : writingStyle === "experience" ? "体验" : "随机",
+        products: models,
+      })
+      
+      // 4) gift.md 为空则兜底（使用原来的硬编码 prompt）
+      if (rendered && rendered.trim()) {
+        return rendered.trim()
+      }
+      
+      // fallback：保留原来的硬编码 prompt
       return `你正在回答一个关于"送礼"的真实问题。
 
 平台主要发布：知乎，同时可能同步百家号。
