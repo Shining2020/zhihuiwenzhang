@@ -156,6 +156,7 @@ export async function POST(request: Request) {
           ],
           temperature: 0.85,
           max_tokens: maxTokens,
+          stream: false,
         }),
         signal: controller.signal,
       })
@@ -187,6 +188,8 @@ export async function POST(request: Request) {
     }
 
     const data = await response.json()
+    console.log("[generate] API response keys:", Object.keys(data))
+    console.log("[generate] API response:", JSON.stringify(data).substring(0, 500))
     const article = data.choices?.[0]?.message?.content || ""
 
     if (!article) {
